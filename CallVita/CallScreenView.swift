@@ -42,7 +42,13 @@ struct CallScreenView: View {
 
             Spacer()
         }
+        .onAppear {
+            if callState == .ringing {
+                SoundManager.shared.playRingtone()
+            }
+        }
         .onDisappear {
+            SoundManager.shared.stopRingtone()
             stopTimer()
         }
         .navigationBarBackButtonHidden(true)
@@ -108,11 +114,13 @@ struct CallScreenView: View {
     }
 
     private func answerCall() {
+        SoundManager.shared.stopRingtone()
         callState = .connected
         startTimer()
     }
 
     private func endCall() {
+        SoundManager.shared.stopRingtone()
         callState = .ended
         stopTimer()
         CallManager.shared.endCall()

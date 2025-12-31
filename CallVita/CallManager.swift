@@ -21,7 +21,7 @@ final class CallManager: NSObject {
         provider.setDelegate(self, queue: nil)
     }
 
-    // MARK: - Start Call
+    // MARK: - Outgoing Call
 
     func startCall() {
         let uuid = UUID()
@@ -37,7 +37,6 @@ final class CallManager: NSObject {
                 return
             }
 
-            // Сообщаем системе, что соединение начинается
             self.provider.reportOutgoingCall(
                 with: uuid,
                 startedConnectingAt: Date()
@@ -61,6 +60,30 @@ final class CallManager: NSObject {
 
         currentCallUUID = nil
     }
+
+    // MARK: - Incoming Call (STEP C-1)
+
+    /// ТЕСТОВЫЙ входящий звонок (без сервера)
+    func simulateIncomingCall() {
+        let uuid = UUID()
+        currentCallUUID = uuid
+
+        let update = CXCallUpdate()
+        update.remoteHandle = CXHandle(type: .generic, value: "Family")
+        update.localizedCallerName = "Incoming Call"
+        update.hasVideo = false
+
+        // ⚠️ Небольшая задержка — чтобы iOS успел отправить app в background
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.provider.reportNewIncomingCall(with: uuid, update: update) { error in
+                if let error = error {
+                    print("❌ Incoming call error:", error)
+                } else {
+                    print("✅ Incoming call reported")
+                }
+            }
+        }
+    }
 }
 
 // MARK: - CXProviderDelegate
@@ -74,11 +97,15 @@ extension CallManager: CXProviderDelegate {
     func provider(_ provider: CXProvider, perform action: CXStartCallAction) {
         action.fulfill()
 
-        // Соединение установлено (для системы)
         provider.reportOutgoingCall(
             with: action.callUUID,
             connectedAt: Date()
         )
+    }
+
+    func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
+        action.fulfill()
+        // Step C-2: здесь будем связывать с UI
     }
 
     func provider(_ provider: CXProvider, perform action: CXEndCallAction) {

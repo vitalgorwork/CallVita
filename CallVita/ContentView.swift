@@ -18,6 +18,7 @@ struct ContentView: View {
 
                 Spacer()
 
+                // 🔵 OUTGOING CALL
                 Button(action: {
                     CallManager.shared.startCall()
                     isCalling = true
@@ -32,6 +33,20 @@ struct ContentView: View {
                         .cornerRadius(14)
                 }
                 .disabled(isCalling)
+                .padding(.horizontal, 24)
+
+                // 🟣 INCOMING CALL (STEP C – TEST BUTTON)
+                Button(action: {
+                    CallManager.shared.simulateIncomingCall()
+                }) {
+                    Text("Simulate Incoming Call")
+                        .font(.subheadline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue.opacity(0.15))
+                        .foregroundColor(.blue)
+                        .cornerRadius(12)
+                }
                 .padding(.horizontal, 24)
 
                 Spacer()
