@@ -1,10 +1,14 @@
 import SwiftUI
 
+// MARK: - Call State
+
 enum CallState: Equatable {
     case ringing
     case connected
     case ended
 }
+
+// MARK: - Call Screen
 
 struct CallScreenView: View {
     @Binding var isCalling: Bool
@@ -43,13 +47,15 @@ struct CallScreenView: View {
             Spacer()
         }
         .onAppear {
+            // ▶️ Start ringtone only while ringing
             if callState == .ringing {
                 SoundManager.shared.playRingtone()
             }
         }
         .onDisappear {
-            SoundManager.shared.stopRingtone()
+            // 🛑 Global cleanup (safety net)
             stopTimer()
+            SoundManager.shared.stopRingtone()
         }
         .navigationBarBackButtonHidden(true)
     }
@@ -121,8 +127,8 @@ struct CallScreenView: View {
 
     private func endCall() {
         SoundManager.shared.stopRingtone()
-        callState = .ended
         stopTimer()
+        callState = .ended
         CallManager.shared.endCall()
     }
 
@@ -152,7 +158,7 @@ struct CallScreenView: View {
     }
 }
 
-// MARK: - RINGING VIEW (ANIMATION ONLY HERE)
+// MARK: - RINGING VIEW (ANIMATION ONLY)
 
 private struct RingingView: View {
     @State private var pulse = false
