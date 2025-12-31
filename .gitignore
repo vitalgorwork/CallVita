@@ -1,0 +1,35 @@
+# === macOS ===
+.DS_Store
+
+# === Xcode ===
+build/
+DerivedData/
+*.xcuserdata
+*.xcuserstate
+*.xcworkspace
+*.xcworkspace/contents.xcworkspacedata
+
+# === Swift Package Manager ===
+.build/
+Packages/
+Package.resolved
+
+# === CocoaPods ===
+Pods/
+
+# === Carthage ===
+Carthage/Build/
+
+# === Fastlane ===
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# === Logs ===
+*.log
+
+# === Temp / Backup ===
+*.swp
+*~
+
