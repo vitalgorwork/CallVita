@@ -61,9 +61,18 @@ final class CallManager: NSObject {
         currentCallUUID = nil
     }
 
-    // MARK: - Incoming Call (SIMULATION)
+    // MARK: - Incoming Call (STEP K.6 — UI-first Simulation)
 
+    /// DEV-симуляция входящего звонка: гарантированно открывает UI (без PushKit/сервера)
     func simulateIncomingCall() {
+        print("📞 simulateIncomingCall tapped")
+
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: CallEvents.incomingSimulated, object: nil)
+        }
+
+        // (Опционально) можем оставить попытку CallKit для логов/экспериментов — не мешает UI
+        // iOS может проигнорировать UI CallKit без PushKit — это нормально.
         let uuid = UUID()
         currentCallUUID = uuid
 
@@ -72,19 +81,11 @@ final class CallManager: NSObject {
         update.localizedCallerName = "Incoming Call"
         update.hasVideo = false
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.provider.reportNewIncomingCall(with: uuid, update: update) { error in
-                if let error = error {
-                    print("❌ Incoming call error:", error)
-                } else {
-                    print("✅ Incoming call reported")
-
-                    // 🔔 УВЕДОМЛЯЕМ SwiftUI
-                    NotificationCenter.default.post(
-                        name: .incomingCall,
-                        object: nil
-                    )
-                }
+        self.provider.reportNewIncomingCall(with: uuid, update: update) { error in
+            if let error = error {
+                print("ℹ️ CallKit incoming ignored/failed (ok for dev):", error)
+            } else {
+                print("✅ CallKit incoming reported")
             }
         }
     }
@@ -100,28 +101,16 @@ extension CallManager: CXProviderDelegate {
 
     func provider(_ provider: CXProvider, perform action: CXStartCallAction) {
         action.fulfill()
-        provider.reportOutgoingCall(
-            with: action.callUUID,
-            connectedAt: Date()
-        )
+        provider.reportOutgoingCall(with: action.callUUID, connectedAt: Date())
     }
 
     func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
         action.fulfill()
-
-        NotificationCenter.default.post(
-            name: .callAnswered,
-            object: nil
-        )
+        // в K.6 UI открываем через Notification (выше), тут можно будет потом синхронизировать state
     }
 
     func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
         action.fulfill()
         currentCallUUID = nil
-
-        NotificationCenter.default.post(
-            name: .callEnded,
-            object: nil
-        )
     }
 }

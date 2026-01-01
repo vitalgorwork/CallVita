@@ -36,7 +36,7 @@ struct ContentView: View {
                 .disabled(isCalling)
                 .padding(.horizontal, 24)
 
-                // 🟣 INCOMING CALL (TEST)
+                // 🟣 INCOMING CALL (DEV SIMULATION)
                 Button(action: {
                     CallManager.shared.simulateIncomingCall()
                 }) {
@@ -55,12 +55,8 @@ struct ContentView: View {
             .navigationDestination(isPresented: $isCalling) {
                 CallScreenView(isCalling: $isCalling)
             }
-        }
-        // 📞 LISTEN FOR INCOMING CALL FROM CallManager
-        .onReceive(NotificationCenter.default.publisher(for: .incomingCall)) { _ in
-            print("📞 incomingCall notification received")
-
-            DispatchQueue.main.async {
+            .onReceive(NotificationCenter.default.publisher(for: CallEvents.incomingSimulated)) { _ in
+                print("✅ UI received incomingSimulated")
                 if !isCalling {
                     isCalling = true
                 }
