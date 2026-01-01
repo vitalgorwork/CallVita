@@ -1,12 +1,23 @@
 import SwiftUI
 import Combine
 
-// MARK: - Call State
+// MARK: - Call State (State Machine)
 
 enum CallState: Equatable {
     case ringing
     case connected
     case ended
+
+    func canTransition(to newState: CallState) -> Bool {
+        switch (self, newState) {
+        case (.ringing, .connected),
+             (.ringing, .ended),
+             (.connected, .ended):
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 // MARK: - Call Screen
@@ -39,11 +50,11 @@ struct CallScreenView: View {
             VStack(spacing: 32) {
                 Spacer()
 
-                // STATUS (spring animated)
+                // STATUS
                 statusView
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
 
-                // TIMER (animated)
+                // TIMER
                 if callState == .connected {
                     Text(timeString)
                         .font(.system(size: 36, weight: .medium, design: .monospaced))
@@ -53,7 +64,7 @@ struct CallScreenView: View {
 
                 Spacer()
 
-                // MAIN BUTTON (scale feedback)
+                // MAIN BUTTON
                 Button(action: primaryAction) {
                     Text(buttonTitle)
                         .font(.title2)
@@ -125,6 +136,16 @@ struct CallScreenView: View {
         .navigationBarBackButtonHidden(true)
     }
 
+    // MARK: - STATE TRANSITION (единственная точка)
+
+    private func transition(to newState: CallState) {
+        guard callState.canTransition(to: newState) else {
+            print("❌ Invalid transition: \(callState) → \(newState)")
+            return
+        }
+        callState = newState
+    }
+
     // MARK: - STATUS VIEW
 
     @ViewBuilder
@@ -185,25 +206,30 @@ struct CallScreenView: View {
     }
 
     private func answerCall() {
+        guard callState == .ringing else { return }
+
         HapticManager.shared.stopRinging()
         HapticManager.shared.answerFeedback()
-
         SoundManager.shared.stopRingtone()
-        callState = .connected
+
+        transition(to: .connected)
         startTimer()
     }
 
     private func endCall() {
+        guard callState != .ended else { return }
+
         HapticManager.shared.stopRinging()
         HapticManager.shared.endCallFeedback()
-
         SoundManager.shared.stopRingtone()
         stopTimer()
-        callState = .ended
+
+        transition(to: .ended)
         CallManager.shared.endCall()
     }
 
     private func closeScreen() {
+        guard callState == .ended else { return }
         isCalling = false
     }
 
