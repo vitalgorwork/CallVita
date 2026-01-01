@@ -27,19 +27,21 @@ struct CallScreenView: View {
             VStack(spacing: 32) {
                 Spacer()
 
-                // STATUS
+                // STATUS (animated)
                 statusView
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
 
-                // TIMER (only when connected)
+                // TIMER (only when connected, animated)
                 if callState == .connected {
                     Text(timeString)
                         .font(.system(size: 36, weight: .medium, design: .monospaced))
                         .foregroundColor(.white)
+                        .transition(.opacity.combined(with: .scale))
                 }
 
                 Spacer()
 
-                // MAIN BUTTON
+                // MAIN BUTTON (animated)
                 Button(action: primaryAction) {
                     Text(buttonTitle)
                         .font(.title2)
@@ -50,12 +52,15 @@ struct CallScreenView: View {
                         .cornerRadius(14)
                 }
                 .padding(.horizontal, 24)
+                .transition(.opacity)
 
                 Spacer()
             }
+            // 🔑 Одна декларативная анимация на смену состояния
+            .animation(.easeInOut(duration: 0.25), value: callState)
         }
 
-        // ▶️ STEP H.1 — Ringing start (sound + haptics)
+        // ▶️ Ringing start (sound + haptics)
         .onAppear {
             if callState == .ringing {
                 SoundManager.shared.playRingtone()
@@ -63,7 +68,7 @@ struct CallScreenView: View {
             }
         }
 
-        // 🛑 STEP H.4 — Global cleanup
+        // 🛑 Global cleanup
         .onDisappear {
             stopTimer()
             SoundManager.shared.stopRingtone()
@@ -148,16 +153,13 @@ struct CallScreenView: View {
         switch callState {
         case .ringing:
             answerCall()
-
         case .connected:
             endCall()
-
         case .ended:
             closeScreen()
         }
     }
 
-    // ▶️ STEP H.2 — Answer
     private func answerCall() {
         HapticManager.shared.stopRinging()
         HapticManager.shared.answerFeedback()
@@ -167,7 +169,6 @@ struct CallScreenView: View {
         startTimer()
     }
 
-    // ▶️ STEP H.3 — End call
     private func endCall() {
         HapticManager.shared.stopRinging()
         HapticManager.shared.endCallFeedback()
