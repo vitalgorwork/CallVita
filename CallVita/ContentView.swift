@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 struct ContentView: View {
     @State private var isCalling = false
@@ -35,7 +36,7 @@ struct ContentView: View {
                 .disabled(isCalling)
                 .padding(.horizontal, 24)
 
-                // 🟣 INCOMING CALL (STEP C – TEST BUTTON)
+                // 🟣 INCOMING CALL (TEST)
                 Button(action: {
                     CallManager.shared.simulateIncomingCall()
                 }) {
@@ -53,6 +54,16 @@ struct ContentView: View {
             }
             .navigationDestination(isPresented: $isCalling) {
                 CallScreenView(isCalling: $isCalling)
+            }
+        }
+        // 📞 LISTEN FOR INCOMING CALL FROM CallManager
+        .onReceive(NotificationCenter.default.publisher(for: .incomingCall)) { _ in
+            print("📞 incomingCall notification received")
+
+            DispatchQueue.main.async {
+                if !isCalling {
+                    isCalling = true
+                }
             }
         }
     }

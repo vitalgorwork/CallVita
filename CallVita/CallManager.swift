@@ -61,9 +61,8 @@ final class CallManager: NSObject {
         currentCallUUID = nil
     }
 
-    // MARK: - Incoming Call (STEP C-1)
+    // MARK: - Incoming Call (SIMULATION)
 
-    /// ТЕСТОВЫЙ входящий звонок (без сервера)
     func simulateIncomingCall() {
         let uuid = UUID()
         currentCallUUID = uuid
@@ -73,13 +72,18 @@ final class CallManager: NSObject {
         update.localizedCallerName = "Incoming Call"
         update.hasVideo = false
 
-        // ⚠️ Небольшая задержка — чтобы iOS успел отправить app в background
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.provider.reportNewIncomingCall(with: uuid, update: update) { error in
                 if let error = error {
                     print("❌ Incoming call error:", error)
                 } else {
                     print("✅ Incoming call reported")
+
+                    // 🔔 УВЕДОМЛЯЕМ SwiftUI
+                    NotificationCenter.default.post(
+                        name: .incomingCall,
+                        object: nil
+                    )
                 }
             }
         }
@@ -96,7 +100,6 @@ extension CallManager: CXProviderDelegate {
 
     func provider(_ provider: CXProvider, perform action: CXStartCallAction) {
         action.fulfill()
-
         provider.reportOutgoingCall(
             with: action.callUUID,
             connectedAt: Date()
@@ -105,11 +108,20 @@ extension CallManager: CXProviderDelegate {
 
     func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
         action.fulfill()
-        // Step C-2: здесь будем связывать с UI
+
+        NotificationCenter.default.post(
+            name: .callAnswered,
+            object: nil
+        )
     }
 
     func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
         action.fulfill()
         currentCallUUID = nil
+
+        NotificationCenter.default.post(
+            name: .callEnded,
+            object: nil
+        )
     }
 }
