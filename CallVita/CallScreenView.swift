@@ -19,33 +19,40 @@ struct CallScreenView: View {
     @State private var timer: Timer?
 
     var body: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        ZStack {
+            // 🔒 Lock-style dark background
+            Color.black.opacity(0.9)
+                .ignoresSafeArea()
 
-            // MARK: - STATUS
-            statusView
+            VStack(spacing: 32) {
+                Spacer()
 
-            // MARK: - TIMER (only when connected)
-            if callState == .connected {
-                Text(timeString)
-                    .font(.system(size: 36, weight: .medium, design: .monospaced))
+                // STATUS
+                statusView
+
+                // TIMER (only when connected)
+                if callState == .connected {
+                    Text(timeString)
+                        .font(.system(size: 36, weight: .medium, design: .monospaced))
+                        .foregroundColor(.white)
+                }
+
+                Spacer()
+
+                // MAIN BUTTON
+                Button(action: primaryAction) {
+                    Text(buttonTitle)
+                        .font(.title2)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(buttonColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(14)
+                }
+                .padding(.horizontal, 24)
+
+                Spacer()
             }
-
-            Spacer()
-
-            // MARK: - MAIN BUTTON
-            Button(action: primaryAction) {
-                Text(buttonTitle)
-                    .font(.title2)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(buttonColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(14)
-            }
-            .padding(.horizontal, 24)
-
-            Spacer()
         }
 
         // ▶️ STEP H.1 — Ringing start (sound + haptics)
@@ -101,11 +108,13 @@ struct CallScreenView: View {
             Text("Connected")
                 .font(.title)
                 .fontWeight(.semibold)
+                .foregroundColor(.white)
 
         case .ended:
             Text("Call Ended")
                 .font(.title)
                 .fontWeight(.semibold)
+                .foregroundColor(.white)
         }
     }
 
@@ -148,7 +157,7 @@ struct CallScreenView: View {
         }
     }
 
-    // ▶️ STEP H.2 — Answer (stop ring + haptic)
+    // ▶️ STEP H.2 — Answer
     private func answerCall() {
         HapticManager.shared.stopRinging()
         HapticManager.shared.answerFeedback()
@@ -158,7 +167,7 @@ struct CallScreenView: View {
         startTimer()
     }
 
-    // ▶️ STEP H.3 — End call (soft haptic)
+    // ▶️ STEP H.3 — End call
     private func endCall() {
         HapticManager.shared.stopRinging()
         HapticManager.shared.endCallFeedback()
@@ -204,6 +213,7 @@ private struct RingingView: View {
         Text("Ringing…")
             .font(.title)
             .fontWeight(.semibold)
+            .foregroundColor(.white)
             .scaleEffect(pulse ? 1.15 : 1.0)
             .onAppear {
                 withAnimation(
