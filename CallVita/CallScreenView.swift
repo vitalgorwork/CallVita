@@ -17,6 +17,18 @@ struct CallScreenView: View {
     @State private var callState: CallState = .ringing
     @State private var seconds: Int = 0
     @State private var timer: Timer?
+    @State private var buttonPressed = false
+
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
+    // MARK: - Animation
+
+    private var transitionAnimation: Animation {
+        reduceMotion
+        ? .easeInOut(duration: 0.15)
+        : .spring(response: 0.35, dampingFraction: 0.85)
+    }
 
     var body: some View {
         ZStack {
@@ -27,11 +39,11 @@ struct CallScreenView: View {
             VStack(spacing: 32) {
                 Spacer()
 
-                // STATUS (animated)
+                // STATUS (spring animated)
                 statusView
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
 
-                // TIMER (only when connected, animated)
+                // TIMER (animated)
                 if callState == .connected {
                     Text(timeString)
                         .font(.system(size: 36, weight: .medium, design: .monospaced))
@@ -41,7 +53,7 @@ struct CallScreenView: View {
 
                 Spacer()
 
-                // MAIN BUTTON (animated)
+                // MAIN BUTTON (scale feedback)
                 Button(action: primaryAction) {
                     Text(buttonTitle)
                         .font(.title2)
@@ -50,17 +62,29 @@ struct CallScreenView: View {
                         .background(buttonColor)
                         .foregroundColor(.white)
                         .cornerRadius(14)
+                        .scaleEffect(buttonPressed ? 0.96 : 1.0)
                 }
                 .padding(.horizontal, 24)
-                .transition(.opacity)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in
+                            withAnimation(.easeOut(duration: 0.1)) {
+                                buttonPressed = true
+                            }
+                        }
+                        .onEnded { _ in
+                            withAnimation(.easeOut(duration: 0.1)) {
+                                buttonPressed = false
+                            }
+                        }
+                )
 
                 Spacer()
             }
-            // 🔑 Одна декларативная анимация на смену состояния
-            .animation(.easeInOut(duration: 0.25), value: callState)
+            .animation(transitionAnimation, value: callState)
         }
 
-        // ▶️ Ringing start (sound + haptics)
+        // ▶️ Ringing start
         .onAppear {
             if callState == .ringing {
                 SoundManager.shared.playRingtone()
@@ -75,7 +99,7 @@ struct CallScreenView: View {
             HapticManager.shared.stopRinging()
         }
 
-        // 🔒 App goes background / screen locked
+        // 🔒 Background / Lock
         .onReceive(
             NotificationCenter.default.publisher(
                 for: UIApplication.willResignActiveNotification
@@ -86,7 +110,7 @@ struct CallScreenView: View {
             stopTimer()
         }
 
-        // 🔓 App returns to foreground
+        // 🔓 Foreground
         .onReceive(
             NotificationCenter.default.publisher(
                 for: UIApplication.didBecomeActiveNotification
@@ -205,7 +229,7 @@ struct CallScreenView: View {
     }
 }
 
-// MARK: - RINGING VIEW (ANIMATION ONLY)
+// MARK: - RINGING VIEW
 
 private struct RingingView: View {
     @State private var pulse = false
@@ -215,10 +239,10 @@ private struct RingingView: View {
             .font(.title)
             .fontWeight(.semibold)
             .foregroundColor(.white)
-            .scaleEffect(pulse ? 1.15 : 1.0)
+            .scaleEffect(pulse ? 1.12 : 1.0)
             .onAppear {
                 withAnimation(
-                    .easeInOut(duration: 0.8)
+                    .easeInOut(duration: 0.9)
                         .repeatForever(autoreverses: true)
                 ) {
                     pulse = true
