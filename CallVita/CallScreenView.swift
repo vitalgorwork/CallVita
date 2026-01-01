@@ -47,16 +47,20 @@ struct CallScreenView: View {
 
             Spacer()
         }
-        // ▶️ Start ringtone only while ringing
+
+        // ▶️ STEP H.1 — Ringing start (sound + haptics)
         .onAppear {
             if callState == .ringing {
                 SoundManager.shared.playRingtone()
+                HapticManager.shared.startRinging()
             }
         }
-        // 🛑 Safety cleanup
+
+        // 🛑 STEP H.4 — Global cleanup
         .onDisappear {
             stopTimer()
             SoundManager.shared.stopRingtone()
+            HapticManager.shared.stopRinging()
         }
 
         // 🔒 App goes background / screen locked
@@ -66,6 +70,7 @@ struct CallScreenView: View {
             )
         ) { _ in
             SoundManager.shared.stopRingtone()
+            HapticManager.shared.stopRinging()
             stopTimer()
         }
 
@@ -77,6 +82,7 @@ struct CallScreenView: View {
         ) { _ in
             if callState == .ringing {
                 SoundManager.shared.playRingtone()
+                HapticManager.shared.startRinging()
             }
         }
 
@@ -142,13 +148,21 @@ struct CallScreenView: View {
         }
     }
 
+    // ▶️ STEP H.2 — Answer (stop ring + haptic)
     private func answerCall() {
+        HapticManager.shared.stopRinging()
+        HapticManager.shared.answerFeedback()
+
         SoundManager.shared.stopRingtone()
         callState = .connected
         startTimer()
     }
 
+    // ▶️ STEP H.3 — End call (soft haptic)
     private func endCall() {
+        HapticManager.shared.stopRinging()
+        HapticManager.shared.endCallFeedback()
+
         SoundManager.shared.stopRingtone()
         stopTimer()
         callState = .ended
@@ -181,7 +195,7 @@ struct CallScreenView: View {
     }
 }
 
-// MARK: - RINGING VIEW (ANIMATION ONLY HERE)
+// MARK: - RINGING VIEW (ANIMATION ONLY)
 
 private struct RingingView: View {
     @State private var pulse = false
