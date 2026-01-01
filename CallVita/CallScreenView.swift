@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 // MARK: - Call State
 
@@ -46,17 +47,39 @@ struct CallScreenView: View {
 
             Spacer()
         }
+        // ▶️ Start ringtone only while ringing
         .onAppear {
-            // ▶️ Start ringtone only while ringing
             if callState == .ringing {
                 SoundManager.shared.playRingtone()
             }
         }
+        // 🛑 Safety cleanup
         .onDisappear {
-            // 🛑 Global cleanup (safety net)
             stopTimer()
             SoundManager.shared.stopRingtone()
         }
+
+        // 🔒 App goes background / screen locked
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIApplication.willResignActiveNotification
+            )
+        ) { _ in
+            SoundManager.shared.stopRingtone()
+            stopTimer()
+        }
+
+        // 🔓 App returns to foreground
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIApplication.didBecomeActiveNotification
+            )
+        ) { _ in
+            if callState == .ringing {
+                SoundManager.shared.playRingtone()
+            }
+        }
+
         .navigationBarBackButtonHidden(true)
     }
 
@@ -158,7 +181,7 @@ struct CallScreenView: View {
     }
 }
 
-// MARK: - RINGING VIEW (ANIMATION ONLY)
+// MARK: - RINGING VIEW (ANIMATION ONLY HERE)
 
 private struct RingingView: View {
     @State private var pulse = false
