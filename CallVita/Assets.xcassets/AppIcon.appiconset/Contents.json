@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "cv_app_3.png",
+      "filename" : "cv_app_4.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "cv_app_3 1.png",
+      "filename" : "cv_app_4 1.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -25,7 +25,7 @@
           "value" : "tinted"
         }
       ],
-      "filename" : "cv_app_3 2.png",
+      "filename" : "cv_app_4 2.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
