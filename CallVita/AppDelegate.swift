@@ -11,11 +11,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
         print("🚀 App did finish launching")
 
-        // Назначаем delegate для показа push в foreground
+        // 🔔 Назначаем delegate для показа push в foreground
         UNUserNotificationCenter.current().delegate = self
 
-        // Регистрируемся в APNs
+        // 📡 Регистрируемся в APNs
         application.registerForRemoteNotifications()
+
+        // 🎧 ИНИЦИАЛИЗАЦИЯ WebRTC (обязательно один раз при старте)
+        _ = WebRTCManager.shared
 
         return true
     }
