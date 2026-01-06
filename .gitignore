@@ -4,10 +4,12 @@
 # === Xcode ===
 build/
 DerivedData/
-*.xcuserdata
+**/xcuserdata/
 *.xcuserstate
-*.xcworkspace
-*.xcworkspace/contents.xcworkspacedata
+
+# НЕ игнорируем workspace целиком!
+# *.xcworkspace   ❌ удалено
+# *.xcworkspace/contents.xcworkspacedata ❌ удалено
 
 # === Swift Package Manager ===
 .build/
@@ -32,4 +34,5 @@ fastlane/test_output
 # === Temp / Backup ===
 *.swp
 *~
+
 
