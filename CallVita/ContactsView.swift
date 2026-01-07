@@ -2,11 +2,13 @@ import SwiftUI
 
 struct ContactsView: View {
 
-    // Временные тестовые контакты
     private let contacts: [Contact] = [
         Contact(id: UUID(), name: "Alice"),
         Contact(id: UUID(), name: "Bob")
     ]
+
+    @State private var isCalling = false
+    @State private var selectedContact: Contact? = nil
 
     var body: some View {
         NavigationView {
@@ -18,12 +20,16 @@ struct ContactsView: View {
                     Spacer()
 
                     Button("Call") {
-                        print("Call \(contact.name)")
+                        selectedContact = contact
+                        isCalling = true
                     }
                 }
                 .padding(.vertical, 4)
             }
             .navigationTitle("Contacts")
+        }
+        .fullScreenCover(isPresented: $isCalling) {
+            CallScreenView(isCalling: $isCalling)
         }
     }
 }
