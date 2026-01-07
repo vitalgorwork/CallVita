@@ -2,10 +2,10 @@ import SwiftUI
 
 struct ContactsView: View {
 
-    // Тестовые контакты
+    // 🔹 Тестовые контакты (id = String, как в реальных CNContact)
     private let contacts: [Contact] = [
-        Contact(id: UUID(), name: "Alice"),
-        Contact(id: UUID(), name: "Bob")
+        Contact(id: "test-alice", name: "Alice"),
+        Contact(id: "test-bob", name: "Bob")
     ]
 
     @State private var selectedContact: Contact? = nil
@@ -29,7 +29,7 @@ struct ContactsView: View {
             }
             .navigationTitle("Contacts")
 
-            // ✅ ЕДИНСТВЕННОЕ место перехода
+            // ✅ ЕДИНСТВЕННАЯ точка навигации
             .navigationDestination(isPresented: $isCalling) {
                 if let contact = selectedContact {
                     CallScreenView(

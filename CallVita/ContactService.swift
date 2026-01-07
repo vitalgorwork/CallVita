@@ -7,12 +7,15 @@ final class ContactService {
 
     private let store = CNContactStore()
 
+    // MARK: - Permission
+
     func requestAccess() async -> Bool {
         let status = CNContactStore.authorizationStatus(for: .contacts)
 
         switch status {
         case .authorized:
             return true
+
         case .notDetermined:
             do {
                 return try await store.requestAccess(for: .contacts)
@@ -20,41 +23,62 @@ final class ContactService {
                 print("❌ Contacts permission error: \(error)")
                 return false
             }
+
         case .denied, .restricted:
             return false
+
         @unknown default:
             return false
         }
     }
 
-    func fetchContacts(limit: Int = 50) -> [Contact] {
-        let keys: [CNKeyDescriptor] = [
-            CNContactGivenNameKey as CNKeyDescriptor,
-            CNContactFamilyNameKey as CNKeyDescriptor
-        ]
+    // MARK: - Fetch Contacts
 
-        let request = CNContactFetchRequest(keysToFetch: keys)
-        request.unifyResults = true
+    func fetchContacts(limit: Int = 50) async -> [Contact] {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let keys: [CNKeyDescriptor] = [
+                    CNContactIdentifierKey as CNKeyDescriptor,
+                    CNContactGivenNameKey as CNKeyDescriptor,
+                    CNContactFamilyNameKey as CNKeyDescriptor
+                ]
 
-        var result: [Contact] = []
-        var count = 0
+                let request = CNContactFetchRequest(keysToFetch: keys)
+                request.unifyResults = true
 
-        do {
-            try store.enumerateContacts(with: request) { cn, stop in
-                let fullName = "\(cn.givenName) \(cn.familyName)".trimmingCharacters(in: .whitespaces)
-                let name = fullName.isEmpty ? "No Name" : fullName
+                var result: [Contact] = []
+                var count = 0
 
-                result.append(Contact(id: UUID(), name: name))
-                count += 1
+                do {
+                    try self.store.enumerateContacts(with: request) { cn, stop in
+                        let fullName = "\(cn.givenName) \(cn.familyName)"
+                            .trimmingCharacters(in: .whitespaces)
 
-                if count >= limit {
-                    stop.pointee = true
+                        let name = fullName.isEmpty ? "No Name" : fullName
+
+                        result.append(
+                            Contact(
+                                id: cn.identifier,
+                                name: name
+                            )
+                        )
+
+                        count += 1
+                        if count >= limit {
+                            stop.pointee = true
+                        }
+                    }
+                } catch {
+                    print("❌ Fetch contacts error: \(error)")
                 }
-            }
-        } catch {
-            print("❌ Fetch contacts error: \(error)")
-        }
 
-        return result
+                // сортировка по имени
+                let sorted = result.sorted {
+                    $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+                }
+
+                continuation.resume(returning: sorted)
+            }
+        }
     }
 }

@@ -1,10 +1,9 @@
 import SwiftUI
-import Combine
 
 struct ContentView: View {
 
-    @State private var isCalling = false
-    @State private var selectedContact: Contact? = nil
+    @State private var isCalling: Bool = false
+    @State private var selectedContact: Contact?
 
     var body: some View {
         NavigationStack {
@@ -22,12 +21,9 @@ struct ContentView: View {
                 Spacer()
 
                 // 🔵 OUTGOING CALL
-                Button(action: {
-                    let contact = Contact(id: UUID(), name: "Alice")
-                    selectedContact = contact
-                    CallManager.shared.startCall()
-                    isCalling = true
-                }) {
+                Button {
+                    startOutgoingCall()
+                } label: {
                     Text("Press to Call")
                         .font(.title2)
                         .fontWeight(.semibold)
@@ -41,11 +37,9 @@ struct ContentView: View {
                 .padding(.horizontal, 24)
 
                 // 🟣 INCOMING CALL (DEV SIMULATION)
-                Button(action: {
-                    let contact = Contact(id: UUID(), name: "Incoming Call")
-                    selectedContact = contact
-                    CallManager.shared.simulateIncomingCall()
-                }) {
+                Button {
+                    simulateIncomingCall()
+                } label: {
                     Text("Simulate Incoming Call")
                         .font(.subheadline)
                         .frame(maxWidth: .infinity)
@@ -71,11 +65,34 @@ struct ContentView: View {
                     for: CallEvents.incomingSimulated
                 )
             ) { _ in
-                if !isCalling {
-                    selectedContact = Contact(id: UUID(), name: "Incoming Call")
-                    isCalling = true
-                }
+                handleIncomingCall()
             }
         }
+    }
+
+    // MARK: - Actions
+
+    private func startOutgoingCall() {
+        let contact = Contact(
+            id: UUID().uuidString,
+            name: "Alice"
+        )
+        selectedContact = contact
+        CallManager.shared.startCall()
+        isCalling = true
+    }
+
+    private func simulateIncomingCall() {
+        CallManager.shared.simulateIncomingCall()
+    }
+
+    private func handleIncomingCall() {
+        guard !isCalling else { return }
+
+        selectedContact = Contact(
+            id: UUID().uuidString,
+            name: "Incoming Call"
+        )
+        isCalling = true
     }
 }
