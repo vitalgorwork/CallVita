@@ -11,7 +11,7 @@ import SwiftUI
 struct CallVitaApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContactsView()
         }
     }
 }
