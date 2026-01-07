@@ -112,6 +112,12 @@ struct CallScreenView: View {
         .onChange(of: callState) { newState in
             handleStateChange(newState)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .appDidEnterBackground)) { _ in
+            handleAppDidEnterBackground()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .appDidBecomeActive)) { _ in
+            handleAppDidBecomeActive()
+        }
         .onDisappear {
             cleanupAll()
         }
@@ -208,6 +214,35 @@ struct CallScreenView: View {
         case .ended:
             cleanupAll()
             AudioSessionManager.shared.deactivate()
+        }
+    }
+
+    // MARK: - App Lifecycle Handling
+
+    private func handleAppDidEnterBackground() {
+        switch callState {
+        case .ringing:
+            SoundManager.shared.stopRingtone()
+            HapticManager.shared.stopRinging()
+
+        case .connected:
+            AudioSessionManager.shared.activateForCall()
+
+        case .ended:
+            break
+        }
+    }
+
+    private func handleAppDidBecomeActive() {
+        switch callState {
+        case .ringing:
+            handleRingingState()
+
+        case .connected:
+            AudioSessionManager.shared.activateForCall()
+
+        case .ended:
+            break
         }
     }
 

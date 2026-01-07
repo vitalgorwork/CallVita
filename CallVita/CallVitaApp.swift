@@ -9,6 +9,12 @@ import SwiftUI
 
 @main
 struct CallVitaApp: App {
+
+    init() {
+        // 🔁 Start observing app lifecycle events
+        _ = AppLifecycleObserver.shared
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
