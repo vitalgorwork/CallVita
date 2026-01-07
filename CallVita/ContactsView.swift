@@ -2,16 +2,17 @@ import SwiftUI
 
 struct ContactsView: View {
 
+    // Тестовые контакты
     private let contacts: [Contact] = [
         Contact(id: UUID(), name: "Alice"),
         Contact(id: UUID(), name: "Bob")
     ]
 
-    @State private var isCalling = false
     @State private var selectedContact: Contact? = nil
+    @State private var isCalling = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List(contacts) { contact in
                 HStack {
                     Text(contact.name)
@@ -27,13 +28,16 @@ struct ContactsView: View {
                 .padding(.vertical, 4)
             }
             .navigationTitle("Contacts")
-        }
-        .fullScreenCover(isPresented: $isCalling) {
-            CallScreenView(isCalling: $isCalling)
+
+            // ✅ ЕДИНСТВЕННОЕ место перехода
+            .navigationDestination(isPresented: $isCalling) {
+                if let contact = selectedContact {
+                    CallScreenView(
+                        contact: contact,
+                        isCalling: $isCalling
+                    )
+                }
+            }
         }
     }
-}
-
-#Preview {
-    ContactsView()
 }

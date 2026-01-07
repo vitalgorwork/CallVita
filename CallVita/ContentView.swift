@@ -2,7 +2,9 @@ import SwiftUI
 import Combine
 
 struct ContentView: View {
+
     @State private var isCalling = false
+    @State private var selectedContact: Contact? = nil
 
     var body: some View {
         NavigationStack {
@@ -21,6 +23,8 @@ struct ContentView: View {
 
                 // 🔵 OUTGOING CALL
                 Button(action: {
+                    let contact = Contact(id: UUID(), name: "Alice")
+                    selectedContact = contact
                     CallManager.shared.startCall()
                     isCalling = true
                 }) {
@@ -38,6 +42,8 @@ struct ContentView: View {
 
                 // 🟣 INCOMING CALL (DEV SIMULATION)
                 Button(action: {
+                    let contact = Contact(id: UUID(), name: "Incoming Call")
+                    selectedContact = contact
                     CallManager.shared.simulateIncomingCall()
                 }) {
                     Text("Simulate Incoming Call")
@@ -53,11 +59,20 @@ struct ContentView: View {
                 Spacer()
             }
             .navigationDestination(isPresented: $isCalling) {
-                CallScreenView(isCalling: $isCalling)
+                if let contact = selectedContact {
+                    CallScreenView(
+                        contact: contact,
+                        isCalling: $isCalling
+                    )
+                }
             }
-            .onReceive(NotificationCenter.default.publisher(for: CallEvents.incomingSimulated)) { _ in
-                print("✅ UI received incomingSimulated")
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: CallEvents.incomingSimulated
+                )
+            ) { _ in
                 if !isCalling {
+                    selectedContact = Contact(id: UUID(), name: "Incoming Call")
                     isCalling = true
                 }
             }

@@ -23,6 +23,7 @@ enum CallState: Equatable {
 // MARK: - Call Screen
 
 struct CallScreenView: View {
+    let contact: Contact
     @Binding var isCalling: Bool
 
     @State private var callState: CallState = .ringing
@@ -43,12 +44,19 @@ struct CallScreenView: View {
 
     var body: some View {
         ZStack {
-            // 🔒 Lock-style dark background
+            // 🔒 Dark background
             Color.black.opacity(0.9)
                 .ignoresSafeArea()
 
-            VStack(spacing: 32) {
+            VStack(spacing: 28) {
                 Spacer()
+
+                // 👤 CONTACT NAME
+                Text(contact.name)
+                    .font(.title)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .transition(.opacity)
 
                 // STATUS
                 statusView
@@ -103,14 +111,14 @@ struct CallScreenView: View {
             }
         }
 
-        // 🛑 Global cleanup
+        // 🛑 Cleanup
         .onDisappear {
             stopTimer()
             SoundManager.shared.stopRingtone()
             HapticManager.shared.stopRinging()
         }
 
-        // 🔒 Background / Lock
+        // 🔒 Background
         .onReceive(
             NotificationCenter.default.publisher(
                 for: UIApplication.willResignActiveNotification
@@ -136,7 +144,7 @@ struct CallScreenView: View {
         .navigationBarBackButtonHidden(true)
     }
 
-    // MARK: - STATE TRANSITION (единственная точка)
+    // MARK: - STATE TRANSITION
 
     private func transition(to newState: CallState) {
         guard callState.canTransition(to: newState) else {
@@ -172,23 +180,17 @@ struct CallScreenView: View {
 
     private var buttonTitle: String {
         switch callState {
-        case .ringing:
-            return "Answer"
-        case .connected:
-            return "End Call"
-        case .ended:
-            return "Close"
+        case .ringing: return "Answer"
+        case .connected: return "End Call"
+        case .ended: return "Close"
         }
     }
 
     private var buttonColor: Color {
         switch callState {
-        case .ringing:
-            return .green
-        case .connected:
-            return .red
-        case .ended:
-            return .gray
+        case .ringing: return .green
+        case .connected: return .red
+        case .ended: return .gray
         }
     }
 
