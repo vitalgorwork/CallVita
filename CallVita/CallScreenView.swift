@@ -1,5 +1,4 @@
 import SwiftUI
-import Combine
 
 // MARK: - Call Direction
 
@@ -48,13 +47,16 @@ struct CallScreenView: View {
             VStack(spacing: 28) {
                 Spacer()
 
+                // 👤 CONTACT
                 Text(contact.name)
                     .font(.title)
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
 
+                // 📡 STATUS
                 statusView
 
+                // ⏱ TIMER
                 if callState == .connected {
                     Text(timeString)
                         .font(.system(size: 36, weight: .medium, design: .monospaced))
@@ -63,6 +65,7 @@ struct CallScreenView: View {
 
                 Spacer()
 
+                // 🔘 MAIN ACTION BUTTON
                 Button(action: primaryAction) {
                     Text(buttonTitle)
                         .font(.title2)
@@ -80,19 +83,37 @@ struct CallScreenView: View {
                         .onEnded { _ in buttonPressed = false }
                 )
 
+#if DEBUG
+                // 🔧 DEV CONNECT (only for outgoing ringing)
+                if direction == .outgoing && callState == .ringing {
+                    Button {
+                        transition(to: .connected)
+                        startTimer()
+                    } label: {
+                        Text("Connect (DEV)")
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.white.opacity(0.15))
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal, 24)
+                }
+#endif
+
                 Spacer()
             }
             .animation(transitionAnimation, value: callState)
         }
         .onAppear {
-            startRinging()
-
-            if direction == .outgoing {
-                simulateOutgoingConnection()
-            }
+            handleRingingState()
+        }
+        .onChange(of: callState) { newState in
+            handleStateChange(newState)
         }
         .onDisappear {
-            cleanup()
+            cleanupAll()
         }
         .navigationBarBackButtonHidden(true)
     }
@@ -157,40 +178,45 @@ struct CallScreenView: View {
     }
 
     private func answerCall() {
-        stopRinging()
         transition(to: .connected)
         startTimer()
     }
 
     private func endCall() {
-        cleanup()
         transition(to: .ended)
         CallManager.shared.endCall()
     }
 
-    // MARK: - Helpers
+    // MARK: - State Handling
 
-    private func startRinging() {
+    private func handleRingingState() {
+        AudioSessionManager.shared.activateForRinging()
         SoundManager.shared.playRingtone()
         HapticManager.shared.startRinging()
     }
 
-    private func stopRinging() {
+    private func handleStateChange(_ newState: CallState) {
+        switch newState {
+        case .ringing:
+            handleRingingState()
+
+        case .connected:
+            AudioSessionManager.shared.activateForCall()
+            SoundManager.shared.stopRingtone()
+            HapticManager.shared.stopRinging()
+
+        case .ended:
+            cleanupAll()
+            AudioSessionManager.shared.deactivate()
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func cleanupAll() {
         SoundManager.shared.stopRingtone()
         HapticManager.shared.stopRinging()
-    }
-
-    private func cleanup() {
-        stopRinging()
         stopTimer()
-    }
-
-    private func simulateOutgoingConnection() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            guard callState == .ringing else { return }
-            transition(to: .connected)
-            startTimer()
-        }
     }
 
     private func transition(to newState: CallState) {
@@ -200,6 +226,7 @@ struct CallScreenView: View {
     // MARK: - Timer
 
     private func startTimer() {
+        stopTimer()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             seconds += 1
         }

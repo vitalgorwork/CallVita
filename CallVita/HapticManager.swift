@@ -3,12 +3,11 @@ import UIKit
 final class HapticManager {
 
     static let shared = HapticManager()
-
     private init() {}
 
-    // MARK: - Ringing (repeating soft vibration)
-
     private var ringTimer: Timer?
+
+    // MARK: - Ringing (soft repeating)
 
     func startRinging() {
         stopRinging()
