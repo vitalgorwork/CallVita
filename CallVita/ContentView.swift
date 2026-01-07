@@ -50,8 +50,23 @@ struct ContentView: View {
                 }
                 .padding(.horizontal, 24)
 
+                // 📇 CONTACTS
+                NavigationLink {
+                    ContactsView()
+                } label: {
+                    Text("Contacts")
+                        .font(.subheadline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.gray.opacity(0.15))
+                        .foregroundColor(.primary)
+                        .cornerRadius(12)
+                }
+                .padding(.horizontal, 24)
+
                 Spacer()
             }
+            // ⬇️ Переход ТОЛЬКО для звонков
             .navigationDestination(isPresented: $isCalling) {
                 if let contact = selectedContact {
                     CallScreenView(

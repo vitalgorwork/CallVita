@@ -2,42 +2,78 @@ import SwiftUI
 
 struct ContactsView: View {
 
-    // 🔹 Тестовые контакты (id = String, как в реальных CNContact)
-    private let contacts: [Contact] = [
-        Contact(id: "test-alice", name: "Alice"),
-        Contact(id: "test-bob", name: "Bob")
-    ]
-
-    @State private var selectedContact: Contact? = nil
-    @State private var isCalling = false
+    @State private var contacts: [Contact] = []
+    @State private var isLoading = true
+    @State private var accessDenied = false
 
     var body: some View {
-        NavigationStack {
-            List(contacts) { contact in
-                HStack {
-                    Text(contact.name)
+        Group {
+            if isLoading {
+                ProgressView("Loading contacts...")
+            } else if accessDenied {
+                VStack(spacing: 12) {
+                    Image(systemName: "person.crop.circle.badge.exclamationmark")
+                        .font(.largeTitle)
+                        .foregroundColor(.secondary)
+
+                    Text("Access to contacts is denied")
                         .font(.headline)
 
-                    Spacer()
-
-                    Button("Call") {
-                        selectedContact = contact
-                        isCalling = true
-                    }
+                    Text("Please enable contacts access in Settings")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
-                .padding(.vertical, 4)
-            }
-            .navigationTitle("Contacts")
-
-            // ✅ ЕДИНСТВЕННАЯ точка навигации
-            .navigationDestination(isPresented: $isCalling) {
-                if let contact = selectedContact {
-                    CallScreenView(
-                        contact: contact,
-                        isCalling: $isCalling
-                    )
+                .multilineTextAlignment(.center)
+                .padding()
+            } else {
+                List(contacts) { contact in
+                    NavigationLink {
+                        CallHostView(contact: contact)
+                    } label: {
+                        Text(contact.name)
+                            .foregroundColor(.primary)
+                    }
                 }
             }
         }
+        .navigationTitle("Contacts")
+        .task {
+            await loadContacts()
+        }
+    }
+
+    @MainActor
+    private func loadContacts() async {
+        isLoading = true
+        accessDenied = false
+
+        let granted = await ContactService.shared.requestAccess()
+
+        if granted {
+            contacts = await ContactService.shared.fetchContacts()
+            isLoading = false
+        } else {
+            accessDenied = true
+            isLoading = false
+        }
+    }
+}
+
+private struct CallHostView: View {
+    let contact: Contact
+
+    @State private var isCalling = true
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        CallScreenView(contact: contact, isCalling: $isCalling)
+            .onAppear {
+                CallManager.shared.startCall()
+            }
+            .onChange(of: isCalling) { newValue in
+                if newValue == false {
+                    dismiss()
+                }
+            }
     }
 }
