@@ -71,6 +71,7 @@ struct ContentView: View {
                 if let contact = selectedContact {
                     CallScreenView(
                         contact: contact,
+                        direction: .outgoing,   // ✅ ОБЯЗАТЕЛЬНО
                         isCalling: $isCalling
                     )
                 }

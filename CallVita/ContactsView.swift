@@ -42,6 +42,8 @@ struct ContactsView: View {
         }
     }
 
+    // MARK: - Contacts Loading
+
     @MainActor
     private func loadContacts() async {
         isLoading = true
@@ -59,6 +61,8 @@ struct ContactsView: View {
     }
 }
 
+// MARK: - Call Host (Contacts → Call Screen)
+
 private struct CallHostView: View {
     let contact: Contact
 
@@ -66,14 +70,18 @@ private struct CallHostView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        CallScreenView(contact: contact, isCalling: $isCalling)
-            .onAppear {
-                CallManager.shared.startCall()
+        CallScreenView(
+            contact: contact,
+            direction: .outgoing,   // ✅ ОБЯЗАТЕЛЬНО
+            isCalling: $isCalling
+        )
+        .onAppear {
+            CallManager.shared.startCall()
+        }
+        .onChange(of: isCalling) { newValue in
+            if newValue == false {
+                dismiss()
             }
-            .onChange(of: isCalling) { newValue in
-                if newValue == false {
-                    dismiss()
-                }
-            }
+        }
     }
 }

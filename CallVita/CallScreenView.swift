@@ -1,29 +1,27 @@
 import SwiftUI
 import Combine
 
-// MARK: - Call State (State Machine)
+// MARK: - Call Direction
+
+enum CallDirection {
+    case outgoing
+    case incoming
+}
+
+// MARK: - Call State
 
 enum CallState: Equatable {
     case ringing
     case connected
     case ended
-
-    func canTransition(to newState: CallState) -> Bool {
-        switch (self, newState) {
-        case (.ringing, .connected),
-             (.ringing, .ended),
-             (.connected, .ended):
-            return true
-        default:
-            return false
-        }
-    }
 }
 
 // MARK: - Call Screen
 
 struct CallScreenView: View {
+
     let contact: Contact
+    let direction: CallDirection
     @Binding var isCalling: Bool
 
     @State private var callState: CallState = .ringing
@@ -44,35 +42,27 @@ struct CallScreenView: View {
 
     var body: some View {
         ZStack {
-            // 🔒 Dark background
             Color.black.opacity(0.9)
                 .ignoresSafeArea()
 
             VStack(spacing: 28) {
                 Spacer()
 
-                // 👤 CONTACT NAME
                 Text(contact.name)
                     .font(.title)
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
-                    .transition(.opacity)
 
-                // STATUS
                 statusView
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
 
-                // TIMER
                 if callState == .connected {
                     Text(timeString)
                         .font(.system(size: 36, weight: .medium, design: .monospaced))
                         .foregroundColor(.white)
-                        .transition(.opacity.combined(with: .scale))
                 }
 
                 Spacer()
 
-                // MAIN BUTTON
                 Button(action: primaryAction) {
                     Text(buttonTitle)
                         .font(.title2)
@@ -86,81 +76,37 @@ struct CallScreenView: View {
                 .padding(.horizontal, 24)
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 0)
-                        .onChanged { _ in
-                            withAnimation(.easeOut(duration: 0.1)) {
-                                buttonPressed = true
-                            }
-                        }
-                        .onEnded { _ in
-                            withAnimation(.easeOut(duration: 0.1)) {
-                                buttonPressed = false
-                            }
-                        }
+                        .onChanged { _ in buttonPressed = true }
+                        .onEnded { _ in buttonPressed = false }
                 )
 
                 Spacer()
             }
             .animation(transitionAnimation, value: callState)
         }
-
-        // ▶️ Ringing start
         .onAppear {
-            if callState == .ringing {
-                SoundManager.shared.playRingtone()
-                HapticManager.shared.startRinging()
+            startRinging()
+
+            if direction == .outgoing {
+                simulateOutgoingConnection()
             }
         }
-
-        // 🛑 Cleanup
         .onDisappear {
-            stopTimer()
-            SoundManager.shared.stopRingtone()
-            HapticManager.shared.stopRinging()
+            cleanup()
         }
-
-        // 🔒 Background
-        .onReceive(
-            NotificationCenter.default.publisher(
-                for: UIApplication.willResignActiveNotification
-            )
-        ) { _ in
-            SoundManager.shared.stopRingtone()
-            HapticManager.shared.stopRinging()
-            stopTimer()
-        }
-
-        // 🔓 Foreground
-        .onReceive(
-            NotificationCenter.default.publisher(
-                for: UIApplication.didBecomeActiveNotification
-            )
-        ) { _ in
-            if callState == .ringing {
-                SoundManager.shared.playRingtone()
-                HapticManager.shared.startRinging()
-            }
-        }
-
         .navigationBarBackButtonHidden(true)
     }
 
-    // MARK: - STATE TRANSITION
-
-    private func transition(to newState: CallState) {
-        guard callState.canTransition(to: newState) else {
-            print("❌ Invalid transition: \(callState) → \(newState)")
-            return
-        }
-        callState = newState
-    }
-
-    // MARK: - STATUS VIEW
+    // MARK: - Status View
 
     @ViewBuilder
     private var statusView: some View {
         switch callState {
         case .ringing:
-            RingingView()
+            Text(direction == .incoming ? "Incoming Call…" : "Calling…")
+                .font(.title)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
 
         case .connected:
             Text("Connected")
@@ -176,13 +122,16 @@ struct CallScreenView: View {
         }
     }
 
-    // MARK: - BUTTON UI
+    // MARK: - Button UI
 
     private var buttonTitle: String {
         switch callState {
-        case .ringing: return "Answer"
-        case .connected: return "End Call"
-        case .ended: return "Close"
+        case .ringing:
+            return direction == .incoming ? "Answer" : "Cancel"
+        case .connected:
+            return "End Call"
+        case .ended:
+            return "Close"
         }
     }
 
@@ -194,51 +143,63 @@ struct CallScreenView: View {
         }
     }
 
-    // MARK: - ACTIONS
+    // MARK: - Actions
 
     private func primaryAction() {
         switch callState {
         case .ringing:
-            answerCall()
+            direction == .incoming ? answerCall() : endCall()
         case .connected:
             endCall()
         case .ended:
-            closeScreen()
+            isCalling = false
         }
     }
 
     private func answerCall() {
-        guard callState == .ringing else { return }
-
-        HapticManager.shared.stopRinging()
-        HapticManager.shared.answerFeedback()
-        SoundManager.shared.stopRingtone()
-
+        stopRinging()
         transition(to: .connected)
         startTimer()
     }
 
     private func endCall() {
-        guard callState != .ended else { return }
-
-        HapticManager.shared.stopRinging()
-        HapticManager.shared.endCallFeedback()
-        SoundManager.shared.stopRingtone()
-        stopTimer()
-
+        cleanup()
         transition(to: .ended)
         CallManager.shared.endCall()
     }
 
-    private func closeScreen() {
-        guard callState == .ended else { return }
-        isCalling = false
+    // MARK: - Helpers
+
+    private func startRinging() {
+        SoundManager.shared.playRingtone()
+        HapticManager.shared.startRinging()
     }
 
-    // MARK: - TIMER
+    private func stopRinging() {
+        SoundManager.shared.stopRingtone()
+        HapticManager.shared.stopRinging()
+    }
+
+    private func cleanup() {
+        stopRinging()
+        stopTimer()
+    }
+
+    private func simulateOutgoingConnection() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            guard callState == .ringing else { return }
+            transition(to: .connected)
+            startTimer()
+        }
+    }
+
+    private func transition(to newState: CallState) {
+        callState = newState
+    }
+
+    // MARK: - Timer
 
     private func startTimer() {
-        stopTimer()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             seconds += 1
         }
@@ -251,33 +212,6 @@ struct CallScreenView: View {
     }
 
     private var timeString: String {
-        let min = seconds / 60
-        let sec = seconds % 60
-        return String(format: "%02d:%02d", min, sec)
-    }
-}
-
-// MARK: - RINGING VIEW
-
-private struct RingingView: View {
-    @State private var pulse = false
-
-    var body: some View {
-        Text("Ringing…")
-            .font(.title)
-            .fontWeight(.semibold)
-            .foregroundColor(.white)
-            .scaleEffect(pulse ? 1.12 : 1.0)
-            .onAppear {
-                withAnimation(
-                    .easeInOut(duration: 0.9)
-                        .repeatForever(autoreverses: true)
-                ) {
-                    pulse = true
-                }
-            }
-            .onDisappear {
-                pulse = false
-            }
+        String(format: "%02d:%02d", seconds / 60, seconds % 60)
     }
 }
