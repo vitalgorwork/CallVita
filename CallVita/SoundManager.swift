@@ -9,26 +9,51 @@ final class SoundManager {
 
     private init() {}
 
-    // MARK: - Ringtone
+    // MARK: - Incoming Ringtone (INFINITE)
 
     func playRingtone() {
-        guard let url = Bundle.main.url(forResource: "ring", withExtension: "mp3") else {
-            print("❌ ring.mp3 not found")
+        stopRingtone() // защита от двойного старта
+
+        guard let url = Bundle.main.url(forResource: "ring", withExtension: "caf") else {
+            print("❌ ring.caf not found in bundle")
             return
         }
 
         do {
+            // ⚠️ ВАЖНО: для рингтона нужен ambient + mix
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(
+                .playback,
+                mode: .default,
+                options: [.mixWithOthers]
+            )
+            try session.setActive(true)
+
             audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.numberOfLoops = -1
+            audioPlayer?.numberOfLoops = -1   // ♾ бесконечно
+            audioPlayer?.volume = 1.0
             audioPlayer?.prepareToPlay()
             audioPlayer?.play()
+
+            print("🔔 Ringtone STARTED (ring.caf, infinite)")
+
         } catch {
-            print("❌ AudioPlayer error:", error)
+            print("❌ Ringtone error:", error.localizedDescription)
         }
     }
 
     func stopRingtone() {
-        audioPlayer?.stop()
-        audioPlayer = nil
+        guard let audioPlayer else { return }
+
+        audioPlayer.stop()
+        self.audioPlayer = nil
+
+        do {
+            try AVAudioSession.sharedInstance().setActive(false)
+        } catch {
+            print("⚠️ AudioSession deactivate error:", error.localizedDescription)
+        }
+
+        print("🔕 Ringtone STOPPED")
     }
 }

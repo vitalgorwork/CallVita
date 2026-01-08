@@ -1,4 +1,5 @@
 import UIKit
+import AudioToolbox
 
 final class HapticManager {
 
@@ -7,34 +8,42 @@ final class HapticManager {
 
     private var ringTimer: Timer?
 
-    // MARK: - Ringing (soft repeating)
+    // MARK: - Incoming Ring Vibration (INFINITE)
 
     func startRinging() {
         stopRinging()
 
-        ringTimer = Timer.scheduledTimer(withTimeInterval: 1.6, repeats: true) { _ in
-            let generator = UIImpactFeedbackGenerator(style: .light)
+        ringTimer = Timer.scheduledTimer(withTimeInterval: 1.4, repeats: true) { _ in
+            // Системная вибрация (как у звонка)
+            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+
+            // Дополнительный тактильный отклик
+            let generator = UINotificationFeedbackGenerator()
             generator.prepare()
-            generator.impactOccurred()
+            generator.notificationOccurred(.warning)
         }
+
+        RunLoop.main.add(ringTimer!, forMode: .common)
+        print("📳 Haptic ringing STARTED")
     }
 
     func stopRinging() {
         ringTimer?.invalidate()
         ringTimer = nil
+        print("📳 Haptic ringing STOPPED")
     }
 
     // MARK: - Actions
 
     func answerFeedback() {
-        let generator = UIImpactFeedbackGenerator(style: .medium)
+        let generator = UINotificationFeedbackGenerator()
         generator.prepare()
-        generator.impactOccurred()
+        generator.notificationOccurred(.success)
     }
 
     func endCallFeedback() {
-        let generator = UIImpactFeedbackGenerator(style: .soft)
+        let generator = UINotificationFeedbackGenerator()
         generator.prepare()
-        generator.impactOccurred()
+        generator.notificationOccurred(.error)
     }
 }

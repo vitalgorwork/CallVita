@@ -7,21 +7,22 @@ final class AudioSessionManager {
 
     private init() {}
 
-    // 📞 Ringing (playback only)
+    // 🔔 Incoming Ring (media-style, loud, foreground)
     func activateForRinging() {
         do {
             try session.setCategory(
                 .playback,
                 mode: .default,
-                options: [.mixWithOthers]
+                options: []
             )
-            try session.setActive(true)
+            try session.setActive(true, options: [])
+            print("🔔 AudioSession ACTIVE for RINGING")
         } catch {
-            print("❌ AudioSession ringing error:", error)
+            print("❌ AudioSession ringing error:", error.localizedDescription)
         }
     }
 
-    // 🔊 Connected (voice call)
+    // 📞 Connected Call (voice)
     func activateForCall() {
         do {
             try session.setCategory(
@@ -29,18 +30,20 @@ final class AudioSessionManager {
                 mode: .voiceChat,
                 options: [.defaultToSpeaker, .allowBluetooth]
             )
-            try session.setActive(true)
+            try session.setActive(true, options: [])
+            print("📞 AudioSession ACTIVE for CALL")
         } catch {
-            print("❌ AudioSession call error:", error)
+            print("❌ AudioSession call error:", error.localizedDescription)
         }
     }
 
-    // ❌ Ended
+    // ❌ End Call
     func deactivate() {
         do {
             try session.setActive(false, options: [.notifyOthersOnDeactivation])
+            print("🔕 AudioSession DEACTIVATED")
         } catch {
-            print("❌ AudioSession deactivate error:", error)
+            print("❌ AudioSession deactivate error:", error.localizedDescription)
         }
     }
 }

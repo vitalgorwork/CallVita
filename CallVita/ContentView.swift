@@ -5,6 +5,9 @@ struct ContentView: View {
     @State private var isCalling: Bool = false
     @State private var selectedContact: Contact?
 
+    @State private var incomingContact: Contact?
+    @State private var showIncomingCall: Bool = false
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
@@ -36,16 +39,16 @@ struct ContentView: View {
                 .disabled(isCalling)
                 .padding(.horizontal, 24)
 
-                // 🟣 INCOMING CALL (DEV SIMULATION)
+                // 🟣 DEV INCOMING CALL (без CallKit)
                 Button {
-                    simulateIncomingCall()
+                    simulateDevIncomingCall()
                 } label: {
-                    Text("Simulate Incoming Call")
+                    Text("Simulate Incoming Call (DEV)")
                         .font(.subheadline)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue.opacity(0.15))
-                        .foregroundColor(.blue)
+                        .background(Color.purple.opacity(0.15))
+                        .foregroundColor(.purple)
                         .cornerRadius(12)
                 }
                 .padding(.horizontal, 24)
@@ -66,22 +69,25 @@ struct ContentView: View {
 
                 Spacer()
             }
-            // ⬇️ Переход ТОЛЬКО для звонков
+            // ⬇️ OUTGOING CALL SCREEN
             .navigationDestination(isPresented: $isCalling) {
                 if let contact = selectedContact {
                     CallScreenView(
                         contact: contact,
-                        direction: .outgoing,   // ✅ ОБЯЗАТЕЛЬНО
+                        direction: .outgoing,
                         isCalling: $isCalling
                     )
                 }
             }
-            .onReceive(
-                NotificationCenter.default.publisher(
-                    for: CallEvents.incomingSimulated
-                )
-            ) { _ in
-                handleIncomingCall()
+            // ⬇️ DEV INCOMING CALL SCREEN
+            .navigationDestination(isPresented: $showIncomingCall) {
+                if let contact = incomingContact {
+                    CallScreenView(
+                        contact: contact,
+                        direction: .incoming,
+                        isCalling: $showIncomingCall
+                    )
+                }
             }
         }
     }
@@ -98,17 +104,13 @@ struct ContentView: View {
         isCalling = true
     }
 
-    private func simulateIncomingCall() {
-        CallManager.shared.simulateIncomingCall()
-    }
-
-    private func handleIncomingCall() {
-        guard !isCalling else { return }
-
-        selectedContact = Contact(
+    // ✅ DEV Incoming (без CallKit)
+    private func simulateDevIncomingCall() {
+        let contact = Contact(
             id: UUID().uuidString,
-            name: "Incoming Call"
+            name: "John Appleseed"
         )
-        isCalling = true
+        incomingContact = contact
+        showIncomingCall = true
     }
 }

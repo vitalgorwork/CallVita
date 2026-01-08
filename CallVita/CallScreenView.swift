@@ -84,7 +84,7 @@ struct CallScreenView: View {
                 )
 
 #if DEBUG
-                // 🔧 DEV CONNECT (only for outgoing ringing)
+                // 🔧 DEV CONNECT — только для исходящего
                 if direction == .outgoing && callState == .ringing {
                     Button {
                         transition(to: .connected)
@@ -107,16 +107,11 @@ struct CallScreenView: View {
             .animation(transitionAnimation, value: callState)
         }
         .onAppear {
-            handleRingingState()
+            // ❗ НИЧЕГО не запускаем для incoming
+            // CallKit уже показал экран и играет рингтон
         }
         .onChange(of: callState) { newState in
             handleStateChange(newState)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .appDidEnterBackground)) { _ in
-            handleAppDidEnterBackground()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .appDidBecomeActive)) { _ in
-            handleAppDidBecomeActive()
         }
         .onDisappear {
             cleanupAll()
@@ -186,71 +181,33 @@ struct CallScreenView: View {
     private func answerCall() {
         transition(to: .connected)
         startTimer()
+        // CallKit уже активировал audio session
     }
 
     private func endCall() {
         transition(to: .ended)
-        CallManager.shared.endCall()
+        // ❗ НЕ дергаем CallManager / CallKit
+        // iOS сама завершит вызов
     }
 
     // MARK: - State Handling
 
-    private func handleRingingState() {
-        AudioSessionManager.shared.activateForRinging()
-        SoundManager.shared.playRingtone()
-        HapticManager.shared.startRinging()
-    }
-
     private func handleStateChange(_ newState: CallState) {
         switch newState {
         case .ringing:
-            handleRingingState()
+            break
 
         case .connected:
-            AudioSessionManager.shared.activateForCall()
-            SoundManager.shared.stopRingtone()
-            HapticManager.shared.stopRinging()
+            break
 
         case .ended:
             cleanupAll()
-            AudioSessionManager.shared.deactivate()
-        }
-    }
-
-    // MARK: - App Lifecycle Handling
-
-    private func handleAppDidEnterBackground() {
-        switch callState {
-        case .ringing:
-            SoundManager.shared.stopRingtone()
-            HapticManager.shared.stopRinging()
-
-        case .connected:
-            AudioSessionManager.shared.activateForCall()
-
-        case .ended:
-            break
-        }
-    }
-
-    private func handleAppDidBecomeActive() {
-        switch callState {
-        case .ringing:
-            handleRingingState()
-
-        case .connected:
-            AudioSessionManager.shared.activateForCall()
-
-        case .ended:
-            break
         }
     }
 
     // MARK: - Helpers
 
     private func cleanupAll() {
-        SoundManager.shared.stopRingtone()
-        HapticManager.shared.stopRinging()
         stopTimer()
     }
 

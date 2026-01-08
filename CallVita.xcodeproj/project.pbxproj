@@ -10,9 +10,22 @@
 		8013727E2F05985700AEE8EC /* CallVita.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CallVita.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8042D9BE2F0F1ED70061212D /* Exceptions for "CallVita" folder in "CallVita" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8013727D2F05985700AEE8EC /* CallVita */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		801372802F05985700AEE8EC /* CallVita */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8042D9BE2F0F1ED70061212D /* Exceptions for "CallVita" folder in "CallVita" target */,
+			);
 			path = CallVita;
 			sourceTree = "<group>";
 		};
@@ -254,7 +267,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CallVita/Info.plist;
 				INFOPLIST_KEY_NSContactsUsageDescription = "CallVita uses your contacts so you can choose who to call";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "CallVita needs microphone access to make and receive calls";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -299,7 +314,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CallVita/Info.plist;
 				INFOPLIST_KEY_NSContactsUsageDescription = "CallVita uses your contacts so you can choose who to call";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "CallVita needs microphone access to make and receive calls";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
