@@ -20,15 +20,11 @@ final class CallKitManager: NSObject {
         config.supportsVideo = false
         config.maximumCallsPerCallGroup = 1
         config.supportedHandleTypes = [.generic]
-
-        // Кастомный рингтон можно включить позже, но это НЕ влияет на DEV incoming
         config.iconTemplateImageData = nil
-        // config.ringtoneSound = "ring.caf"
 
         self.provider = CXProvider(configuration: config)
         super.init()
 
-        // Лучше на main, чтобы CallKit/UI точно не чудили
         provider.setDelegate(self, queue: DispatchQueue.main)
 
         print("🚨 CallKitManager.init END — provider delegate set")
@@ -40,9 +36,7 @@ final class CallKitManager: NSObject {
         handle: String,
         completion: ((Error?) -> Void)? = nil
     ) {
-        print("🚨 reportIncomingCall ENTERED")
-        print("🚨 UUID:", uuid)
-        print("🚨 Handle:", handle)
+        print("🚨 reportIncomingCall ENTERED:", handle)
 
         currentCallUUID = uuid
 
@@ -50,20 +44,52 @@ final class CallKitManager: NSObject {
         update.remoteHandle = CXHandle(type: .generic, value: handle)
         update.hasVideo = false
 
-        print("🚨 Calling provider.reportNewIncomingCall (completion-based)")
+        DispatchQueue.main.async {
+            CallSession.shared.incomingCall(from: handle)
+        }
 
-        // ✅ ВАЖНО: используем completion-версию (НЕ async/await), чтобы не было ошибки как на скриншоте
         provider.reportNewIncomingCall(with: uuid, update: update) { error in
             if let error {
                 print("❌ reportNewIncomingCall ERROR:", error.localizedDescription)
             } else {
-                print("✅ reportNewIncomingCall SUCCESS (no error)")
+                print("✅ reportNewIncomingCall SUCCESS")
             }
             completion?(error)
         }
     }
 
-    // MARK: - End Call
+    // MARK: - Outgoing Call (CallKit)
+    func startCall(to handle: String) {
+        print("📤 startCall called:", handle)
+
+        let uuid = UUID()
+        currentCallUUID = uuid
+
+        // UI → dialing
+        DispatchQueue.main.async {
+            CallSession.shared.outgoingCall(to: handle)
+        }
+
+        // 🟢 ВАЖНО: готовим VoIP-аудио до CXTransaction!
+        prepareAudioForOutgoing()
+
+        let cxHandle = CXHandle(type: .generic, value: handle)
+        let action = CXStartCallAction(call: uuid, handle: cxHandle)
+        let transaction = CXTransaction(action: action)
+
+        callController.request(transaction) { error in
+            if let error {
+                print("❌ startCall error:", error.localizedDescription)
+                DispatchQueue.main.async {
+                    CallSession.shared.callEnded()
+                }
+            } else {
+                print("📤 startCall transaction accepted")
+            }
+        }
+    }
+
+    // MARK: - End Call (from UI/app)
     func endCall() {
         print("🚨 endCall called")
 
@@ -79,11 +105,9 @@ final class CallKitManager: NSObject {
             if let error {
                 print("❌ End call error:", error.localizedDescription)
             } else {
-                print("✅ End call transaction sent")
+                print("📴 End call transaction sent")
             }
         }
-
-        currentCallUUID = nil
     }
 }
 
@@ -91,20 +115,41 @@ final class CallKitManager: NSObject {
 extension CallKitManager: CXProviderDelegate {
 
     func providerDidReset(_ provider: CXProvider) {
-        print("⚠️ providerDidReset")
+        print("⚠️ providerDidReset — ignored (DEV / foreground)")
         currentCallUUID = nil
     }
 
     func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
         print("📞 CXAnswerCallAction received")
+
         configureAudioSession()
+        DispatchQueue.main.async {
+            CallSession.shared.callAnswered()
+        }
+
+        action.fulfill()
+    }
+
+    func provider(_ provider: CXProvider, perform action: CXStartCallAction) {
+        print("📤 CXStartCallAction received — connecting audio")
+
+        configureAudioSession()
+        DispatchQueue.main.async {
+            CallSession.shared.callAnswered()
+        }
+
         action.fulfill()
     }
 
     func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
         print("📴 CXEndCallAction received")
-        action.fulfill()
+
+        DispatchQueue.main.async {
+            CallSession.shared.callEnded()
+        }
         currentCallUUID = nil
+
+        action.fulfill()
     }
 
     func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
@@ -117,19 +162,32 @@ extension CallKitManager: CXProviderDelegate {
 
     // MARK: - Audio
     private func configureAudioSession() {
-        print("🎧 configureAudioSession called")
+        print("🎧 configureAudioSession (CallKit)")
 
         let session = AVAudioSession.sharedInstance()
         do {
-            try session.setCategory(
-                .playAndRecord,
-                mode: .voiceChat,
-                options: [.allowBluetooth, .defaultToSpeaker]
-            )
+            try session.setCategory(.playAndRecord,
+                                   mode: .voiceChat,
+                                   options: [.allowBluetooth, .defaultToSpeaker])
             try session.setActive(true)
-            print("🎧 Audio session ACTIVE")
         } catch {
             print("❌ Audio session error:", error.localizedDescription)
+        }
+    }
+
+    // MARK: - Outgoing Audio
+    private func prepareAudioForOutgoing() {
+        print("🎧 prepareAudioForOutgoing")
+
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playAndRecord,
+                                   mode: .voiceChat,
+                                   options: [.allowBluetooth, .defaultToSpeaker])
+            try session.setActive(true)
+            print("🎧 outgoing audio OK")
+        } catch {
+            print("❌ outgoing audio error:", error.localizedDescription)
         }
     }
 }

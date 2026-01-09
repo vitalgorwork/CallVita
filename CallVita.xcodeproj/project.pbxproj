@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		8042D9C92F104FDE0061212D /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 8042D9C82F104FDE0061212D /* FirebaseAppCheck */; };
+		8042D9CB2F104FDE0061212D /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8042D9CA2F104FDE0061212D /* FirebaseCore */; };
+		8042D9CD2F104FDE0061212D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 8042D9CC2F104FDE0061212D /* FirebaseFirestore */; };
+		8042D9CF2F104FDE0061212D /* FirebaseInstallations in Frameworks */ = {isa = PBXBuildFile; productRef = 8042D9CE2F104FDE0061212D /* FirebaseInstallations */; };
+		8042D9D12F104FDE0061212D /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 8042D9D02F104FDE0061212D /* FirebaseMessaging */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		8013727E2F05985700AEE8EC /* CallVita.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CallVita.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +44,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8042D9CB2F104FDE0061212D /* FirebaseCore in Frameworks */,
+				8042D9C92F104FDE0061212D /* FirebaseAppCheck in Frameworks */,
+				8042D9D12F104FDE0061212D /* FirebaseMessaging in Frameworks */,
+				8042D9CD2F104FDE0061212D /* FirebaseFirestore in Frameworks */,
+				8042D9CF2F104FDE0061212D /* FirebaseInstallations in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +91,11 @@
 			);
 			name = CallVita;
 			packageProductDependencies = (
+				8042D9C82F104FDE0061212D /* FirebaseAppCheck */,
+				8042D9CA2F104FDE0061212D /* FirebaseCore */,
+				8042D9CC2F104FDE0061212D /* FirebaseFirestore */,
+				8042D9CE2F104FDE0061212D /* FirebaseInstallations */,
+				8042D9D02F104FDE0061212D /* FirebaseMessaging */,
 			);
 			productName = CallVita;
 			productReference = 8013727E2F05985700AEE8EC /* CallVita.app */;
@@ -107,6 +125,9 @@
 			);
 			mainGroup = 801372752F05985700AEE8EC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8042D9C72F104FDE0061212D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8013727F2F05985700AEE8EC /* Products */;
 			projectDirPath = "";
@@ -370,6 +391,45 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		8042D9C72F104FDE0061212D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.7.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8042D9C82F104FDE0061212D /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8042D9C72F104FDE0061212D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
+		};
+		8042D9CA2F104FDE0061212D /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8042D9C72F104FDE0061212D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		8042D9CC2F104FDE0061212D /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8042D9C72F104FDE0061212D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		8042D9CE2F104FDE0061212D /* FirebaseInstallations */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8042D9C72F104FDE0061212D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseInstallations;
+		};
+		8042D9D02F104FDE0061212D /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8042D9C72F104FDE0061212D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 801372762F05985700AEE8EC /* Project object */;
 }

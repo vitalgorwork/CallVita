@@ -2,115 +2,115 @@ import SwiftUI
 
 struct ContentView: View {
 
-    @State private var isCalling: Bool = false
-    @State private var selectedContact: Contact?
-
-    @State private var incomingContact: Contact?
-    @State private var showIncomingCall: Bool = false
+    @StateObject private var callSession = CallSession.shared
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Spacer()
+            Group {
+                switch callSession.state {
 
-                Text("CallVita")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                case .idle:
+                    mainScreen
 
-                Text("Private internet calls")
+                case .incoming, .dialing, .connected:
+                    if let name = callSession.callerName {
+                        CallScreenView(
+                            contact: Contact(id: UUID().uuidString, name: name),
+                            direction: callSession.state == .incoming ? .incoming : .outgoing,
+                            isCalling: isCallingBinding
+                        )
+                    } else {
+                        mainScreen
+                    }
+
+                case .ended:
+                    mainScreen
+                }
+            }
+        }
+    }
+
+    // MARK: - Binding for CallScreenView
+
+    private var isCallingBinding: Binding<Bool> {
+        Binding(
+            get: { callSession.state != .idle },
+            set: { newValue in
+                if newValue == false {
+                    CallKitManager.shared.endCall()
+                    callSession.reset()
+                }
+            }
+        )
+    }
+
+    // MARK: - Main Screen
+
+    private var mainScreen: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Text("CallVita")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+
+            Text("Private internet calls")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            Spacer()
+
+            Button {
+                startOutgoingCall()
+            } label: {
+                Text("Press to Call")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(14)
+            }
+            .padding(.horizontal, 24)
+
+            Button {
+                simulateDevIncomingCall()
+            } label: {
+                Text("Simulate Incoming Call (DEV)")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
-
-                Spacer()
-
-                // 🔵 OUTGOING CALL
-                Button {
-                    startOutgoingCall()
-                } label: {
-                    Text("Press to Call")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(isCalling ? Color.gray : Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(14)
-                }
-                .disabled(isCalling)
-                .padding(.horizontal, 24)
-
-                // 🟣 DEV INCOMING CALL (без CallKit)
-                Button {
-                    simulateDevIncomingCall()
-                } label: {
-                    Text("Simulate Incoming Call (DEV)")
-                        .font(.subheadline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.purple.opacity(0.15))
-                        .foregroundColor(.purple)
-                        .cornerRadius(12)
-                }
-                .padding(.horizontal, 24)
-
-                // 📇 CONTACTS
-                NavigationLink {
-                    ContactsView()
-                } label: {
-                    Text("Contacts")
-                        .font(.subheadline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.gray.opacity(0.15))
-                        .foregroundColor(.primary)
-                        .cornerRadius(12)
-                }
-                .padding(.horizontal, 24)
-
-                Spacer()
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.purple.opacity(0.15))
+                    .foregroundColor(.purple)
+                    .cornerRadius(12)
             }
-            // ⬇️ OUTGOING CALL SCREEN
-            .navigationDestination(isPresented: $isCalling) {
-                if let contact = selectedContact {
-                    CallScreenView(
-                        contact: contact,
-                        direction: .outgoing,
-                        isCalling: $isCalling
-                    )
-                }
+            .padding(.horizontal, 24)
+
+            NavigationLink {
+                ContactsView()
+            } label: {
+                Text("Contacts")
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.gray.opacity(0.15))
+                    .foregroundColor(.primary)
+                    .cornerRadius(12)
             }
-            // ⬇️ DEV INCOMING CALL SCREEN
-            .navigationDestination(isPresented: $showIncomingCall) {
-                if let contact = incomingContact {
-                    CallScreenView(
-                        contact: contact,
-                        direction: .incoming,
-                        isCalling: $showIncomingCall
-                    )
-                }
-            }
+            .padding(.horizontal, 24)
+
+            Spacer()
         }
     }
 
     // MARK: - Actions
 
     private func startOutgoingCall() {
-        let contact = Contact(
-            id: UUID().uuidString,
-            name: "Alice"
-        )
-        selectedContact = contact
-        CallManager.shared.startCall()
-        isCalling = true
+        CallKitManager.shared.startCall(to: "Bob")
     }
 
-    // ✅ DEV Incoming (без CallKit)
     private func simulateDevIncomingCall() {
-        let contact = Contact(
-            id: UUID().uuidString,
-            name: "John Appleseed"
-        )
-        incomingContact = contact
-        showIncomingCall = true
+        CallKitManager.shared.reportIncomingCall(handle: "John Appleseed")
     }
 }
