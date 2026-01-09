@@ -20,8 +20,11 @@ final class WebRTCManager: NSObject {
         let audioSession = RTCAudioSession.sharedInstance()
         audioSession.lockForConfiguration()
         do {
+            // WebRTC ожидает rawValue, иначе типы не совпадают
             try audioSession.setCategory(AVAudioSession.Category.playAndRecord.rawValue)
             try audioSession.setMode(AVAudioSession.Mode.voiceChat.rawValue)
+
+            // WebRTC требует activation здесь
             try audioSession.setActive(true)
         } catch let error {
             print("WebRTC audio setup error:", error.localizedDescription)
@@ -43,6 +46,8 @@ final class WebRTCManager: NSObject {
         config.iceServers = [
             RTCIceServer(urlStrings: ["stun:stun.l.google.com:19302"])
         ]
+
+        // Без unifiedPlan audio track может не работать
         config.sdpSemantics = .unifiedPlan
 
         let constraints = RTCMediaConstraints(
@@ -60,10 +65,10 @@ final class WebRTCManager: NSObject {
     // MARK: - Audio Track
 
     private func addAudioTrack() {
-        let audioSource = factory.audioSource(with: RTCMediaConstraints(mandatoryConstraints: nil,
-                                                                        optionalConstraints: nil))
-        let audioTrack = factory.audioTrack(with: audioSource, trackId: "audio0")
-        peerConnection?.add(audioTrack, streamIds: ["stream0"])
+        let source = factory.audioSource(with: RTCMediaConstraints(mandatoryConstraints: nil,
+                                                                   optionalConstraints: nil))
+        let track = factory.audioTrack(with: source, trackId: "audio0")
+        peerConnection?.add(track, streamIds: ["stream0"])
     }
 
     // MARK: - Loopback
@@ -99,7 +104,7 @@ final class WebRTCManager: NSObject {
                     return
                 }
 
-                // Loopback: remote = local
+                // loopback = удалённый = локальный
                 self.peerConnection?.setRemoteDescription(offer) { error in
                     if let error = error {
                         print("Failed setRemoteDescription(offer):", error.localizedDescription)
